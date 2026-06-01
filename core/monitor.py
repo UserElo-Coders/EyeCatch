@@ -1,5 +1,6 @@
 import psutil
 from models.cpu_info import CPUInfo
+from models.ram_info import RAMInfo
 
 class SystemMonitor:
     def __init__(self):
@@ -14,7 +15,7 @@ class SystemMonitor:
         if freq and freq.current :
             frequency = f"{freq.current / 1000:.2f} GHz"
         else:
-            frequency : "N/A"
+            frequency = "N/A"
 
         temperature = self._get_cpu_temperature()
 
@@ -45,3 +46,28 @@ class SystemMonitor:
                     return f"{current:.1f} ºC"
                 
         return "N/A"
+    
+    def get_ram_info(self) -> RAMInfo :
+        memory = psutil.virtual_memory()
+
+        gb = 1024 ** 3
+
+        total = memory.total / gb
+        used = memory.used / gb
+        available = memory.available / gb
+        percent = memory.percent
+        
+        cached = getattr(memory, "cached", None)
+
+        if cached is not None:
+            cached = cached / gb
+        else:
+            cached = 0.0
+
+        return RAMInfo(
+            total=total,
+            used=used,
+            available=available,
+            percent=percent,
+            cached=cached
+        )

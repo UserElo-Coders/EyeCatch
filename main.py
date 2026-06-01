@@ -5,6 +5,9 @@ from ui.dashboard import DashboardApp
 def main():
     root = tk.Tk()
     monitor = SystemMonitor()
+
+    ram = monitor.get_ram_info()
+
     app = DashboardApp(root, monitor)
     root.mainloop()
 
