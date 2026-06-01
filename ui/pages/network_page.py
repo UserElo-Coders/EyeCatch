@@ -1,41 +1,19 @@
-import tkinter as tk
-from tkinter import ttk
-
-from ui.components.rows import add_row
+from ui.components.card import Card
+from ui.components.row import Row
 
 
 class NetworkPage:
-    def __init__(self, content):
+    def __init__(self, content, data):
         self.content = content
+        self.data = data
 
-        self.sent_speed_var = tk.StringVar(value="--")
-        self.received_speed_var = tk.StringVar(value="--")
-        self.total_sent_var = tk.StringVar(value="--")
-        self.total_received_var = tk.StringVar(value="--")
-
-    def render(self, data):
-        title = ttk.Label(self.content, text="NETWORK", font=("Segoe UI", 20, "bold"))
-        title.pack(anchor="w", pady=(10, 15))
-
-        self.card = ttk.Frame(self.content, padding=15, relief="ridge")
-        self.card.pack(fill="both", expand=True)
-
-        add_row(self.card, "Upload", self.sent_speed_var, 0)
-        add_row(self.card, "Download", self.received_speed_var, 1)
-        add_row(self.card, "Total enviado", self.total_sent_var, 2)
-        add_row(self.card, "Total recebido", self.total_received_var, 3)
-
-        self.refresh(data)
-
-    def refresh(self, data):
-        if data is None:
-            self.sent_speed_var.set("--")
-            self.received_speed_var.set("--")
-            self.total_sent_var.set("--")
-            self.total_received_var.set("--")
+    def render(self):
+        if not self.data:
             return
 
-        self.sent_speed_var.set(f"{data.sent_speed:.2f} KB/s")
-        self.received_speed_var.set(f"{data.received_speed:.2f} KB/s")
-        self.total_sent_var.set(f"{data.total_sent / (1024 ** 2):.2f} MB")
-        self.total_received_var.set(f"{data.total_received / (1024 ** 2):.2f} MB")
+        card = Card(self.content)
+
+        Row(card, "Sent", f"{self.data.sent_speed:.2f} KB/s")
+        Row(card, "Recv", f"{self.data.received_speed:.2f} KB/s")
+        Row(card, "Total Sent", f"{self.data.total_sent / (1024**2):.2f} MB")
+        Row(card, "Total Recv", f"{self.data.total_received / (1024**2):.2f} MB")
