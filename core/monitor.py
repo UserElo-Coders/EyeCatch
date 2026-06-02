@@ -119,7 +119,12 @@ class SystemMonitor:
 
         processes = []
 
-        for p in psutil.process_iter(["pid", "name", "status"]):
+        for p in psutil.process_iter([
+            "pid",
+            "name",
+            "status",
+            "memory_percent"
+        ]):
             try:
                 processes.append(
                     ProcessInfo(

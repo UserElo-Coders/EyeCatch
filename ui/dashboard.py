@@ -26,7 +26,6 @@ class DashboardApp:
         self.current_page_name = "cpu"
 
         self._build_ui()
-        self._loop()
 
         self.pages = {
             "cpu": CPUPage,
@@ -37,6 +36,7 @@ class DashboardApp:
         }
 
         self.navigate("cpu")
+        self._loop()
 
     def _build_ui(self):
         self.container = tk.Frame(self.root, bg="#0F1115")
@@ -52,16 +52,18 @@ class DashboardApp:
         self.content.pack(fill="both", expand=True)
 
     def _loop(self):
-        self.state = {
-            "cpu": self.monitor.get_cpu_info(),
-            "ram": self.monitor.get_ram_info(),
-            "disk": self.monitor.get_disk_info(),
-            "network": self.monitor.get_network_info(),
-            "process": self.monitor.get_processes()
-        }
+        self.state["cpu"] = self.monitor.get_cpu_info()
+        self.state["ram"] = self.monitor.get_ram_info()
+        self.state["disk"] = self.monitor.get_disk_info()
+        self.state["network"] = self.monitor.get_network_info()
+
+        if self.current_page_name == "process":
+            self.state["process"] = self.monitor.get_processes()
 
         if self.current_page:
-            self.navigate(self.current_page_name)
+            self.current_page.update(
+                self.state.get(self.current_page_name)
+            )
 
         self.root.after(1000, self._loop)
 
