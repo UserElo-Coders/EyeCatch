@@ -9,6 +9,8 @@ from ui.pages.disk_page import DiskPage
 from ui.pages.network_page import NetworkPage
 from ui.pages.process_page import ProcessPage
 
+from core.history import HistoryManager
+
 
 class DashboardApp:
     def __init__(self, root, monitor):
@@ -20,10 +22,12 @@ class DashboardApp:
         self.root.geometry("1000x600")
         self.root.title("EyeCatch")
 
+        self.history = HistoryManager()
+
         self.state = {}
 
         self.current_page = None
-        self.current_page_name = "cpu"
+        self.current_page_name = "dasboard"
 
         self._build_ui()
 
@@ -40,7 +44,7 @@ class DashboardApp:
         self.state["disk"] = self.monitor.get_disk_info()
         self.state["network"] = self.monitor.get_network_info()
 
-        self.navigate("cpu")
+        self.navigate("dashboard")
         self._loop()
 
     def _build_ui(self):
@@ -61,6 +65,13 @@ class DashboardApp:
         self.state["ram"] = self.monitor.get_ram_info()
         self.state["disk"] = self.monitor.get_disk_info()
         self.state["network"] = self.monitor.get_network_info()
+
+        self.history.update(
+            self.state["cpu"].usage,
+            self.state["ram"].percent,
+            self.state["disk"].usage,
+            self.state["network"].received_speed
+        )
 
         if self.current_page_name == "process":
             self.state["process"] = self.monitor.get_processes()
