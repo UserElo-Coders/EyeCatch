@@ -14,6 +14,8 @@ class ChartSpec:
     title: str
     history_key: str
     color: str
+    xlabel: str
+    ylabel: str
     ymin: Optional[float] = None
     ymax: Optional[float] = None
 
@@ -39,7 +41,7 @@ CPU_CONFIG = ResourcePageConfig(
         MetricSpec("Threads", "threads", lambda v: str(v)),
     ],
     charts=[
-        ChartSpec("CPU History", "cpu_usage", "#4F8CFF", 0, 100),
+        ChartSpec("CPU History", "cpu_usage", "#4F8CFF", "Seconds", "Usage (%)", 0, 100),
     ],
 )
 
@@ -55,7 +57,7 @@ RAM_CONFIG = ResourcePageConfig(
         MetricSpec("Cached", "cached", lambda v: f"{v:.2f} GB"),
     ],
     charts=[
-        ChartSpec("RAM History", "ram_percent", "#7C5CFF", 0, 100),
+        ChartSpec("RAM History", "ram_percent", "#7C5CFF", "Seconds", "Usage (%)", 0, 100),
     ],
 )
 
@@ -71,7 +73,7 @@ DISK_CONFIG = ResourcePageConfig(
         MetricSpec("Write Speed", "write_speed", lambda v: f"{v:.2f} MB/s"),
     ],
     charts=[
-        ChartSpec("Disk Usage History", "disk_usage", "#22C55E", 0, 100),
+        ChartSpec("Disk Usage History", "disk_usage", "#22C55E", "Seconds", "Usage (%)", 0, 100),
     ],
 )
 
@@ -86,6 +88,6 @@ NETWORK_CONFIG = ResourcePageConfig(
         MetricSpec("Total Received", "total_received", lambda v: f"{v / (1024 ** 2):.2f} MB"),
     ],
     charts=[
-        ChartSpec("Network History", "network_speed", "#F59E0B", 0, None),
+        ChartSpec("Network History", "network_speed", "#F59E0B", "Seconds", "KB/s", 0, None),
     ],
 )

@@ -4,6 +4,7 @@ from ui.pages.base_page import BasePage
 from ui.components.page_header import PageHeader
 from ui.components.metric_card import MetricCard
 from ui.components.chart_card import ChartCard
+from ui.components.scrollable_frame import ScrollableFrame
 from ui.pages.resource_configs import ResourcePageConfig
 
 
@@ -11,7 +12,7 @@ class ResourcePage(BasePage):
     def __init__(self, parent, view_model, config: ResourcePageConfig):
         super().__init__(parent, view_model)
         self.config = config
-        self.metric_vars: dict[str, tk.StringVar] = {}
+        self.metric_vars = {}
         self.metric_cards = []
         self.chart_cards = []
 
@@ -20,9 +21,14 @@ class ResourcePage(BasePage):
         self.metric_cards.clear()
         self.chart_cards.clear()
 
-        PageHeader(self.parent, self.config.title, self.config.subtitle)
+        scroll = ScrollableFrame(self.parent, bg="#0F1115")
+        scroll.pack(fill="both", expand=True)
 
-        metrics_frame = tk.Frame(self.parent, bg="#0F1115")
+        root = scroll.inner
+
+        PageHeader(root, self.config.title, self.config.subtitle)
+
+        metrics_frame = tk.Frame(root, bg="#0F1115")
         metrics_frame.pack(fill="x", padx=12, pady=(0, 10))
 
         metrics_frame.columnconfigure(0, weight=1, uniform="cards")
@@ -42,17 +48,10 @@ class ResourcePage(BasePage):
             self.metric_vars[metric.attr] = var
 
             card = MetricCard(metrics_frame, metric.title, var)
-            card.grid(
-                row=row,
-                column=col,
-                columnspan=span,
-                padx=12,
-                pady=12,
-                sticky="nsew"
-            )
+            card.grid(row=row, column=col, columnspan=span, padx=12, pady=12, sticky="nsew")
             self.metric_cards.append(card)
 
-        charts_frame = tk.Frame(self.parent, bg="#0F1115")
+        charts_frame = tk.Frame(root, bg="#0F1115")
         charts_frame.pack(fill="both", expand=True, padx=12, pady=(0, 24))
 
         charts_frame.columnconfigure(0, weight=1, uniform="charts")
@@ -68,15 +67,14 @@ class ResourcePage(BasePage):
             col = i % 2
             span = 2 if (chart_count % 2 == 1 and i == chart_count - 1) else 1
 
-            chart_card = ChartCard(charts_frame, chart.title, chart.color)
-            chart_card.grid(
-                row=row,
-                column=col,
-                columnspan=span,
-                padx=12,
-                pady=12,
-                sticky="nsew"
+            chart_card = ChartCard(
+                charts_frame,
+                chart.title,
+                chart.color,
+                chart.xlabel,
+                chart.ylabel
             )
+            chart_card.grid(row=row, column=col, columnspan=span, padx=12, pady=12, sticky="nsew")
             self.chart_cards.append((chart, chart_card))
 
         self.update(self.view_model)
@@ -96,5 +94,11 @@ class ResourcePage(BasePage):
 
         if history is not None:
             for chart_spec, chart_card in self.chart_cards:
-                series = history.get(chart_spec.history_key)
-                chart_card.update_chart(series, chart_spec.ymin, chart_spec.ymax)
+                series = history.get(chart_spec.history_key) or []
+                current_value = series[-1] if series else 0
+                chart_card.update_chart(
+                    series,
+                    chart_spec.ymin,
+                    chart_spec.ymax,
+                    current_value=current_value
+                )

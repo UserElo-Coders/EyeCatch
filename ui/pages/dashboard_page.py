@@ -4,6 +4,7 @@ from ui.pages.base_page import BasePage
 from ui.components.page_header import PageHeader
 from ui.components.metric_card import MetricCard
 from ui.components.chart_card import ChartCard
+from ui.components.scrollable_frame import ScrollableFrame
 
 
 class DashboardPage(BasePage):
@@ -13,13 +14,17 @@ class DashboardPage(BasePage):
         self.chart_widgets = {}
 
     def render(self):
+        scroll = ScrollableFrame(self.parent, bg="#0F1115")
+        scroll.pack(fill="both", expand=True)
+        root = scroll.inner
+
         PageHeader(
-            self.parent,
+            root,
             "Dashboard",
             "Overview of CPU, RAM, Disk and Network activity"
         )
 
-        top = tk.Frame(self.parent, bg="#0F1115")
+        top = tk.Frame(root, bg="#0F1115")
         top.pack(fill="x", padx=12, pady=(0, 10))
 
         for i in range(4):
@@ -36,7 +41,7 @@ class DashboardPage(BasePage):
         MetricCard(top, "Disk Usage", self.vars["disk"]).grid(row=0, column=2, padx=12, pady=12, sticky="nsew")
         MetricCard(top, "Network", self.vars["network"]).grid(row=0, column=3, padx=12, pady=12, sticky="nsew")
 
-        charts = tk.Frame(self.parent, bg="#0F1115")
+        charts = tk.Frame(root, bg="#0F1115")
         charts.pack(fill="both", expand=True, padx=12, pady=(0, 24))
 
         charts.columnconfigure(0, weight=1, uniform="charts")
@@ -44,10 +49,10 @@ class DashboardPage(BasePage):
         charts.rowconfigure(0, weight=1)
         charts.rowconfigure(1, weight=1)
 
-        self.chart_widgets["cpu"] = ChartCard(charts, "CPU History", "#4F8CFF")
-        self.chart_widgets["ram"] = ChartCard(charts, "RAM History", "#7C5CFF")
-        self.chart_widgets["disk"] = ChartCard(charts, "Disk History", "#22C55E")
-        self.chart_widgets["network"] = ChartCard(charts, "Network History", "#F59E0B")
+        self.chart_widgets["cpu"] = ChartCard(charts, "CPU History", "#4F8CFF", "Seconds", "Usage (%)")
+        self.chart_widgets["ram"] = ChartCard(charts, "RAM History", "#7C5CFF", "Seconds", "Usage (%)")
+        self.chart_widgets["disk"] = ChartCard(charts, "Disk History", "#22C55E", "Seconds", "Usage (%)")
+        self.chart_widgets["network"] = ChartCard(charts, "Network History", "#F59E0B", "Seconds", "KB/s")
 
         self.chart_widgets["cpu"].grid(row=0, column=0, padx=12, pady=12, sticky="nsew")
         self.chart_widgets["ram"].grid(row=0, column=1, padx=12, pady=12, sticky="nsew")
@@ -75,7 +80,17 @@ class DashboardPage(BasePage):
             self.vars["network"].set(f"{network.sent_speed + network.received_speed:.2f} KB/s")
 
         if history is not None:
-            self.chart_widgets["cpu"].update_chart(history.get("cpu_usage"), 0, 100)
-            self.chart_widgets["ram"].update_chart(history.get("ram_percent"), 0, 100)
-            self.chart_widgets["disk"].update_chart(history.get("disk_usage"), 0, 100)
-            self.chart_widgets["network"].update_chart(history.get("network_speed"), 0, None)
+            cpu_series = history.get("cpu_usage") or []
+            ram_series = history.get("ram_percent") or []
+            disk_series = history.get("disk_usage") or []
+            network_series = history.get("network_speed") or []
+
+            self.chart_widgets["cpu"].update_chart(cpu_series, 0, 100, cpu_series[-1] if cpu_series else 0)
+            self.chart_widgets["ram"].update_chart(ram_series, 0, 100, ram_series[-1] if ram_series else 0)
+            self.chart_widgets["disk"].update_chart(disk_series, 0, 100, disk_series[-1] if disk_series else 0)
+            self.chart_widgets["network"].update_chart(
+                network_series,
+                0,
+                None,
+                network_series[-1] if network_series else 0
+            )
