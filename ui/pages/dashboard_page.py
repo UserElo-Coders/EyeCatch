@@ -6,6 +6,8 @@ from ui.components.metric_card import MetricCard
 from ui.components.chart_card import ChartCard
 from ui.components.scrollable_frame import ScrollableFrame
 
+import ui.theme.tokens as tokens
+
 
 class DashboardPage(BasePage):
     def __init__(self, parent, view_model):
@@ -14,7 +16,7 @@ class DashboardPage(BasePage):
         self.chart_widgets = {}
 
     def render(self):
-        scroll = ScrollableFrame(self.parent, bg="#0F1115")
+        scroll = ScrollableFrame(self.parent, bg=tokens.BACKGROUND)
         scroll.pack(fill="both", expand=True)
         root = scroll.inner
 
@@ -24,7 +26,7 @@ class DashboardPage(BasePage):
             "Overview of CPU, RAM, Disk and Network activity"
         )
 
-        top = tk.Frame(root, bg="#0F1115")
+        top = tk.Frame(root, bg=tokens.BACKGROUND)
         top.pack(fill="x", padx=12, pady=(0, 10))
 
         for i in range(4):
@@ -41,7 +43,7 @@ class DashboardPage(BasePage):
         MetricCard(top, "Disk Usage", self.vars["disk"]).grid(row=0, column=2, padx=12, pady=12, sticky="nsew")
         MetricCard(top, "Network", self.vars["network"]).grid(row=0, column=3, padx=12, pady=12, sticky="nsew")
 
-        charts = tk.Frame(root, bg="#0F1115")
+        charts = tk.Frame(root, bg=tokens.BACKGROUND)
         charts.pack(fill="both", expand=True, padx=12, pady=(0, 24))
 
         charts.columnconfigure(0, weight=1, uniform="charts")

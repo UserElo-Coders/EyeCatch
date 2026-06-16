@@ -7,6 +7,8 @@ from ui.components.chart_card import ChartCard
 from ui.components.scrollable_frame import ScrollableFrame
 from ui.pages.resource_configs import ResourcePageConfig
 
+import ui.theme.tokens as tokens
+
 
 class ResourcePage(BasePage):
     def __init__(self, parent, view_model, config: ResourcePageConfig):
@@ -21,14 +23,14 @@ class ResourcePage(BasePage):
         self.metric_cards.clear()
         self.chart_cards.clear()
 
-        scroll = ScrollableFrame(self.parent, bg="#0F1115")
+        scroll = ScrollableFrame(self.parent, bg=tokens.BACKGROUND)
         scroll.pack(fill="both", expand=True)
 
         root = scroll.inner
 
         PageHeader(root, self.config.title, self.config.subtitle)
 
-        metrics_frame = tk.Frame(root, bg="#0F1115")
+        metrics_frame = tk.Frame(root, bg=tokens.BACKGROUND)
         metrics_frame.pack(fill="x", padx=12, pady=(0, 10))
 
         metrics_frame.columnconfigure(0, weight=1, uniform="cards")
@@ -51,7 +53,7 @@ class ResourcePage(BasePage):
             card.grid(row=row, column=col, columnspan=span, padx=12, pady=12, sticky="nsew")
             self.metric_cards.append(card)
 
-        charts_frame = tk.Frame(root, bg="#0F1115")
+        charts_frame = tk.Frame(root, bg=tokens.BACKGROUND)
         charts_frame.pack(fill="both", expand=True, padx=12, pady=(0, 24))
 
         charts_frame.columnconfigure(0, weight=1, uniform="charts")

@@ -2,6 +2,11 @@ from collections import deque
 
 
 class HistoryManager:
+    """
+    Stores historical values used by dashboard charts.
+
+    Limits stored samples to prevent memory growth.
+    """
     def __init__(self, maxlen: int = 60):
         self.cpu_usage = deque(maxlen=maxlen)
         self.ram_percent = deque(maxlen=maxlen)

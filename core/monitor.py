@@ -10,6 +10,12 @@ from models.process_info import ProcessInfo
 
 
 class SystemMonitor:
+    """
+    Collects and aggregates system metrics using psutil.
+
+    Provides data for CPU, RAM, Disk, Network and
+    running process monitoring.
+    """
     def __init__(self):
         psutil.cpu_percent(interval=None)
 
@@ -28,7 +34,7 @@ class SystemMonitor:
         self._last_process_update = 0
         self._process_warmup_done = False
 
-    def get_cpu_info(self):
+    def get_cpu_info(self) -> CPUInfo:
         usage = psutil.cpu_percent(interval=None)
 
         freq = psutil.cpu_freq()
@@ -57,7 +63,7 @@ class SystemMonitor:
                     return f"{t.current:.1f} °C"
         return "N/A"
 
-    def get_ram_info(self):
+    def get_ram_info(self) -> RAMInfo:
         m = psutil.virtual_memory()
         gb = 1024 ** 3
 
@@ -72,7 +78,7 @@ class SystemMonitor:
             cached=cached_gb
         )
 
-    def get_disk_info(self):
+    def get_disk_info(self) -> DiskInfo:
         d = psutil.disk_usage(self._disk_path)
         io = psutil.disk_io_counters()
 
@@ -104,7 +110,7 @@ class SystemMonitor:
             write_speed=(write / seconds) / mb
         )
 
-    def get_network_info(self):
+    def get_network_info(self) -> NetworkInfo:
         n = psutil.net_io_counters()
 
         sent = n.bytes_sent - self.last_sent_bytes
@@ -123,7 +129,10 @@ class SystemMonitor:
             total_received=n.bytes_recv
         )
 
-    def get_processes(self, limit=15):
+    def get_processes(
+        self,
+        limit: int = 15
+    ) -> list[ProcessInfo]:
         now = time.time()
 
         if now - self._last_process_update < 10 and self._process_cache:
