@@ -1,5 +1,10 @@
 # EyeCatch v2.0
 
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Active-success)
+![Version](https://img.shields.io/badge/Version-2.0-orange)
+
 Next-generation system monitoring platform built with scalability, modularity and advanced visualization in mind.
 
 EyeCatch V2 introduces a completely redesigned architecture focused on maintainability, performance and future enterprise-grade features.
