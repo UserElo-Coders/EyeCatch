@@ -31,20 +31,18 @@ class ChartCard(tk.Frame):
         self.ylabel = ylabel
         self.show_axes = show_axes
 
-        self._values = []
+        self._values = np.array([], dtype=float)
+        self._display_values = np.array([], dtype=float)
         self._ymin = None
         self._ymax = None
 
         self._animation_after_id = None
-        self._animation_frames = 16
+        self._animation_frames = 8
         self._animation_step = 0
         self._animation_from = np.array([], dtype=float)
         self._animation_to = np.array([], dtype=float)
 
-        self._hover_dot = None
-        self._hover_text = None
-        self._tooltip = None
-        self._tooltip_visible = False
+        self._last_hover_index = None
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
@@ -115,14 +113,16 @@ class ChartCard(tk.Frame):
 
         self.figure = Figure(figsize=(4.6, 2.5), dpi=100)
         self.figure.patch.set_facecolor(SURFACE)
+        self.figure.subplots_adjust(left=0.06, right=0.98, top=0.92, bottom=0.12)
+
         self.ax = self.figure.add_subplot(111)
         self.ax.set_facecolor(SURFACE)
 
-        self.canvas = FigureCanvasTkAgg(self.figure, self)
-        widget = self.canvas.get_tk_widget()
-        widget.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
+        self.glow_line, = self.ax.plot([], [], color=self.line_color, linewidth=8, alpha=0.08, zorder=2)
+        self.main_line, = self.ax.plot([], [], color=self.line_color, linewidth=2.8, zorder=3)
+        self.point = self.ax.scatter([], [], s=54, color=self.line_color, edgecolors="#FFFFFF", linewidths=0.6, zorder=5)
 
-        self._tooltip = self.ax.annotate(
+        self.tooltip = self.ax.annotate(
             "",
             xy=(0, 0),
             xytext=(12, 12),
@@ -142,17 +142,29 @@ class ChartCard(tk.Frame):
                 color=self.line_color,
                 linewidth=1,
             ),
+            zorder=6,
         )
-        self._tooltip.set_visible(False)
+        self.tooltip.set_visible(False)
+
+        self.canvas = FigureCanvasTkAgg(self.figure, self)
+        widget = self.canvas.get_tk_widget()
+        widget.grid(row=1, column=0, sticky="nsew", padx=10, pady=(0, 10))
 
         self.canvas.mpl_connect("motion_notify_event", self._on_mouse_move)
         self.canvas.mpl_connect("figure_leave_event", self._on_leave)
-        self._apply_axis_style()
 
-    def _apply_axis_style(self):
-        self.ax.clear()
-        self.ax.set_facecolor(SURFACE)
+        self._configure_axes()
 
+    def destroy(self):
+        if self._animation_after_id is not None:
+            try:
+                self.after_cancel(self._animation_after_id)
+            except Exception:
+                pass
+            self._animation_after_id = None
+        super().destroy()
+
+    def _configure_axes(self):
         for spine in self.ax.spines.values():
             spine.set_visible(False)
 
@@ -204,16 +216,20 @@ class ChartCard(tk.Frame):
         self._ymin = ymin
         self._ymax = ymax
 
-        if len(self._values) == 0:
+        if len(self._display_values) == 0:
+            self._display_values = new_values
             self._values = new_values
             self.redraw()
             return
 
         if self._animation_after_id is not None:
-            self.after_cancel(self._animation_after_id)
+            try:
+                self.after_cancel(self._animation_after_id)
+            except Exception:
+                pass
             self._animation_after_id = None
 
-        self._animation_from = self._pad_series(self._values, len(new_values))
+        self._animation_from = self._pad_series(self._display_values, len(new_values))
         self._animation_to = self._pad_series(new_values, len(self._animation_from))
         self._animation_step = 0
         self._animate_step()
@@ -226,29 +242,33 @@ class ChartCard(tk.Frame):
             (self._animation_to - self._animation_from) * eased
         )
 
-        self._values = interpolated
+        self._display_values = interpolated
         self.redraw()
 
         self._animation_step += 1
-        if self._animation_step < self._animation_frames:
-            self._animation_after_id = self.after(20, self._animate_step)
+        if self._animation_step < self._animation_frames and self.winfo_exists():
+            self._animation_after_id = self.after(24, self._animate_step)
         else:
             self._animation_after_id = None
-            self._values = self._animation_to
+            self._display_values = self._animation_to
             self.redraw()
 
     def redraw(self):
-        self._apply_axis_style()
+        self._configure_axes()
 
-        values = np.array(self._values, dtype=float)
+        values = np.array(self._display_values, dtype=float)
         if len(values) == 0:
+            self.main_line.set_data([], [])
+            self.glow_line.set_data([], [])
+            self.point.set_offsets(np.empty((0, 2)))
+            self.tooltip.set_visible(False)
             self.canvas.draw_idle()
             return
 
         x = np.arange(len(values), dtype=float)
 
         if len(values) >= 3:
-            x_smooth = np.linspace(x.min(), x.max(), max(len(values) * 20, 120))
+            x_smooth = np.linspace(x.min(), x.max(), max(len(values) * 18, 90))
             y_smooth = np.interp(x_smooth, x, values)
         else:
             x_smooth = x
@@ -265,7 +285,36 @@ class ChartCard(tk.Frame):
         self.ax.set_ylim(ymin, ymax)
         self.ax.set_xlim(0, max(len(values) - 1, 1))
 
-        # área preenchida
+        self.glow_line.set_data(x_smooth, y_smooth)
+        self.glow_line.set_path_effects([
+            pe.Stroke(linewidth=10, foreground=self.line_color, alpha=0.10),
+            pe.Normal(),
+        ])
+
+        self.main_line.set_data(x_smooth, y_smooth)
+        self.main_line.set_path_effects([
+            pe.Stroke(linewidth=5.2, foreground=self.line_color, alpha=0.12),
+            pe.Normal(),
+        ])
+
+        last_x = x[-1]
+        last_y = values[-1]
+
+        self.point.set_offsets(np.array([[last_x, last_y]]))
+        self.point.set_visible(True)
+
+        if self.tooltip.get_visible():
+            self.tooltip.xy = (last_x, last_y)
+            self.tooltip.set_text(self._format_value(last_y))
+
+        # área preenchida recriada só uma vez por frame
+        for coll in list(self.ax.collections):
+            if coll is not self.point:
+                try:
+                    coll.remove()
+                except Exception:
+                    pass
+
         self.ax.fill_between(
             x_smooth,
             y_smooth,
@@ -276,94 +325,36 @@ class ChartCard(tk.Frame):
             zorder=1,
         )
 
-        # glow “soft”
-        self.ax.plot(
-            x_smooth,
-            y_smooth,
-            color=self.line_color,
-            linewidth=9,
-            alpha=0.08,
-            solid_capstyle="round",
-            zorder=2,
-        )
-
-        # linha principal com glow
-        line, = self.ax.plot(
-            x_smooth,
-            y_smooth,
-            color=self.line_color,
-            linewidth=2.8,
-            solid_capstyle="round",
-            zorder=3,
-        )
-        line.set_path_effects([
-            pe.Stroke(linewidth=6, foreground=self.line_color, alpha=0.12),
-            pe.Normal()
-        ])
-
-        # ponto final
-        last_x = x[-1]
-        last_y = values[-1]
-
-        self._hover_dot = self.ax.scatter(
-            [last_x],
-            [last_y],
-            s=54,
-            color=self.line_color,
-            edgecolors="#FFFFFF",
-            linewidths=0.6,
-            zorder=5,
-        )
-
-        self._hover_text = self.ax.annotate(
-            self._format_value(last_y),
-            xy=(last_x, last_y),
-            xytext=(10, 14),
-            textcoords="offset points",
-            color=TEXT_PRIMARY,
-            fontsize=8,
-            bbox=dict(
-                boxstyle="round,pad=0.35",
-                facecolor="#1D212B",
-                edgecolor=self.line_color,
-                linewidth=1,
-            ),
-            arrowprops=dict(
-                arrowstyle="-",
-                color=self.line_color,
-                linewidth=1,
-            ),
-            zorder=6,
-        )
-
-        # leve destaque para o último valor
-        self.ax.axhline(last_y, color=self.line_color, alpha=0.10, linewidth=1, zorder=0)
-
-        self.figure.tight_layout(pad=0.6)
-        self.canvas.draw_idle()
+        self.figure.canvas.draw_idle()
 
     def _on_mouse_move(self, event):
-        if event.inaxes != self.ax or len(self._values) == 0:
-            if self._tooltip.get_visible():
-                self._tooltip.set_visible(False)
+        if event.inaxes != self.ax or len(self._display_values) == 0 or event.xdata is None:
+            if self.tooltip.get_visible():
+                self.tooltip.set_visible(False)
                 self.canvas.draw_idle()
             return
 
-        x = np.arange(len(self._values), dtype=float)
-        y = np.array(self._values, dtype=float)
+        idx = int(np.clip(round(event.xdata), 0, len(self._display_values) - 1))
+        if self._last_hover_index == idx and self.tooltip.get_visible():
+            return
 
-        idx = int(np.clip(round(event.xdata), 0, len(x) - 1))
+        self._last_hover_index = idx
+
+        x = np.arange(len(self._display_values), dtype=float)
+        y = np.array(self._display_values, dtype=float)
+
         px = x[idx]
         py = y[idx]
 
-        self._tooltip.xy = (px, py)
-        self._tooltip.set_text(self._format_value(py))
-        self._tooltip.set_visible(True)
+        self.tooltip.xy = (px, py)
+        self.tooltip.set_text(self._format_value(py))
+        self.tooltip.set_visible(True)
         self.canvas.draw_idle()
 
     def _on_leave(self, _event):
-        if self._tooltip.get_visible():
-            self._tooltip.set_visible(False)
+        self._last_hover_index = None
+        if self.tooltip.get_visible():
+            self.tooltip.set_visible(False)
             self.canvas.draw_idle()
 
     def _pad_series(self, series, target_len):
