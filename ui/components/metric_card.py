@@ -1,41 +1,30 @@
 import tkinter as tk
+from ui.theme.tokens import SURFACE, BORDER, TEXT_PRIMARY, TEXT_SECONDARY
 
 
 class MetricCard(tk.Frame):
-
-    def __init__(self, parent, title, variable):
-
+    def __init__(self, parent, title: str, variable: tk.StringVar):
         super().__init__(
             parent,
-            bg="#171A21",
-            width=320,
-            height=160,
+            bg=SURFACE,
             highlightthickness=1,
-            highlightbackground="#252A35"
+            highlightbackground=BORDER
         )
 
-        self.grid_propagate(False)
+        self.columnconfigure(0, weight=1)
 
         tk.Label(
             self,
             text=title,
-            bg="#171A21",
-            fg="#9CA3AF",
+            bg=SURFACE,
+            fg=TEXT_SECONDARY,
             font=("Segoe UI", 10)
-        ).pack(
-            anchor="w",
-            padx=20,
-            pady=(20, 0)
-        )
+        ).grid(row=0, column=0, sticky="w", padx=20, pady=(18, 0))
 
         tk.Label(
             self,
             textvariable=variable,
-            bg="#171A21",
-            fg="#FFFFFF",
+            bg=SURFACE,
+            fg=TEXT_PRIMARY,
             font=("Segoe UI", 24, "bold")
-        ).pack(
-            anchor="w",
-            padx=20,
-            pady=(12, 0)
-        )
+        ).grid(row=1, column=0, sticky="w", padx=20, pady=(10, 18))

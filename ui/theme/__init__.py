@@ -1,5 +1,2 @@
-from ui.theme.tokens import BG
-
-
-def setup_theme(root):
-    root.configure(bg=BG)
+from .theme import setup_theme
+from .tokens import *

@@ -3,47 +3,50 @@ import tkinter as tk
 from ui.theme import setup_theme
 from ui.components.sidebar import Sidebar
 
-from ui.pages.cpu_page import CPUPage
-from ui.pages.ram_page import RAMPage
-from ui.pages.disk_page import DiskPage
-from ui.pages.network_page import NetworkPage
-from ui.pages.process_page import ProcessPage
-
-from core.history import HistoryManager
+from ui.pages import (
+    DashboardPage,
+    CPUPage,
+    RAMPage,
+    DiskPage,
+    NetworkPage,
+    ProcessPage,
+)
 
 
 class DashboardApp:
-    def __init__(self, root, monitor):
+    def __init__(self, root, monitor, history):
         self.root = root
         self.monitor = monitor
+        self.history = history
 
         setup_theme(self.root)
 
-        self.root.geometry("1000x600")
         self.root.title("EyeCatch")
+        self.root.geometry("1280x720")
 
-        self.history = HistoryManager()
+        self.state = {
+            "cpu": None,
+            "ram": None,
+            "disk": None,
+            "network": None,
+            "processes": [],
+        }
 
-        self.state = {}
-
+        self.current_page_name = "dashboard"
         self.current_page = None
-        self.current_page_name = "dasboard"
 
         self._build_ui()
 
         self.pages = {
+            "dashboard": DashboardPage,
             "cpu": CPUPage,
             "ram": RAMPage,
             "disk": DiskPage,
             "network": NetworkPage,
-            "process": ProcessPage
+            "process": ProcessPage,
         }
 
-        self.state["cpu"] = self.monitor.get_cpu_info()
-        self.state["ram"] = self.monitor.get_ram_info()
-        self.state["disk"] = self.monitor.get_disk_info()
-        self.state["network"] = self.monitor.get_network_info()
-
+        self._update_state()
         self.navigate("dashboard")
         self._loop()
 
@@ -60,38 +63,61 @@ class DashboardApp:
         self.content = tk.Frame(self.main, bg="#0F1115")
         self.content.pack(fill="both", expand=True)
 
-    def _loop(self):
+    def _update_state(self):
         self.state["cpu"] = self.monitor.get_cpu_info()
         self.state["ram"] = self.monitor.get_ram_info()
         self.state["disk"] = self.monitor.get_disk_info()
         self.state["network"] = self.monitor.get_network_info()
 
         self.history.update(
-            self.state["cpu"].usage,
-            self.state["ram"].percent,
-            self.state["disk"].usage,
-            self.state["network"].received_speed
+            cpu_usage=self.state["cpu"].usage,
+            ram_percent=self.state["ram"].percent,
+            disk_usage=self.state["disk"].usage,
+            network_speed=self.state["network"].sent_speed + self.state["network"].received_speed,
         )
 
         if self.current_page_name == "process":
-            self.state["process"] = self.monitor.get_processes()
+            self.state["processes"] = self.monitor.get_processes(limit=15)
+
+    def _build_view_model(self):
+        return {
+            **self.state,
+            "history": self.history,
+            "health": self._calculate_health(),
+        }
+
+    def _calculate_health(self):
+        cpu = self.state["cpu"].usage if self.state["cpu"] else 0
+        ram = self.state["ram"].percent if self.state["ram"] else 0
+        disk = self.state["disk"].usage if self.state["disk"] else 0
+
+        score = 100
+        score -= cpu * 0.20
+        score -= ram * 0.20
+        score -= disk * 0.10
+
+        return max(0, int(score))
+
+    def _loop(self):
+        self._update_state()
 
         if self.current_page:
-            self.current_page.update(
-                self.state.get(self.current_page_name)
-            )
+            self.current_page.update(self._build_view_model())
 
         self.root.after(1000, self._loop)
 
     def navigate(self, page):
         self.current_page_name = page
 
-        for w in self.content.winfo_children():
-            w.destroy()
+        if hasattr(self, "sidebar"):
+            self.sidebar.set_active(page)
 
-        self.current_page = self.pages[page](
-            self.content,
-            self.state.get(page)
-        )
+        for widget in self.content.winfo_children():
+            widget.destroy()
 
+        if page == "process" and not self.state.get("processes"):
+            self.state["processes"] = self.monitor.get_processes(limit=15)
+
+        page_class = self.pages[page]
+        self.current_page = page_class(self.content, self._build_view_model())
         self.current_page.render()

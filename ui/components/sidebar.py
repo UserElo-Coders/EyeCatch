@@ -1,25 +1,14 @@
 import tkinter as tk
 
-BG = "#0F1115"
-SURFACE = "#171A21"
-
-PRIMARY = "#00E5FF"
-
-TEXT = "#FFFFFF"
-MUTED = "#8B93A7"
+from ui.theme.tokens import BG, SURFACE, PRIMARY, TEXT_PRIMARY, TEXT_SECONDARY
 
 
 class Sidebar(tk.Frame):
-
     def __init__(self, parent, navigate):
-
-        super().__init__(
-            parent,
-            bg=BG,
-            width=240
-        )
-
+        super().__init__(parent, bg=BG, width=240)
         self.pack_propagate(False)
+        self.navigate = navigate
+        self.buttons = {}
 
         tk.Label(
             self,
@@ -27,40 +16,34 @@ class Sidebar(tk.Frame):
             bg=BG,
             fg=PRIMARY,
             font=("Segoe UI", 22, "bold")
-        ).pack(
-            anchor="w",
-            padx=24,
-            pady=(30, 0)
-        )
+        ).pack(anchor="w", padx=24, pady=(30, 0))
 
         tk.Label(
             self,
             text="System Tracker",
             bg=BG,
-            fg=MUTED,
+            fg=TEXT_SECONDARY,
             font=("Segoe UI", 10)
-        ).pack(
-            anchor="w",
-            padx=24,
-            pady=(0, 30)
-        )
+        ).pack(anchor="w", padx=24, pady=(0, 30))
 
         items = [
+            ("Dashboard", "dashboard"),
             ("CPU", "cpu"),
             ("Memory", "ram"),
             ("Disk", "disk"),
             ("Network", "network"),
-            ("Processes", "process")
+            ("Processes", "process"),
         ]
 
         for text, route in items:
-
-            tk.Button(
+            btn = tk.Button(
                 self,
                 text=text,
-                command=lambda r=route: navigate(r),
+                command=lambda r=route: self.navigate(r),
                 bg=SURFACE,
-                fg=TEXT,
+                fg=TEXT_PRIMARY,
+                activebackground="#1D212B",
+                activeforeground=TEXT_PRIMARY,
                 relief="flat",
                 bd=0,
                 padx=20,
@@ -68,8 +51,13 @@ class Sidebar(tk.Frame):
                 anchor="w",
                 cursor="hand2",
                 font=("Segoe UI", 11)
-            ).pack(
-                fill="x",
-                padx=15,
-                pady=5
             )
+            btn.pack(fill="x", padx=15, pady=5)
+            self.buttons[route] = btn
+
+    def set_active(self, route):
+        for name, btn in self.buttons.items():
+            if name == route:
+                btn.configure(bg="#1D212B", fg=PRIMARY)
+            else:
+                btn.configure(bg=SURFACE, fg=TEXT_PRIMARY)

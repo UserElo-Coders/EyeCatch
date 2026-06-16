@@ -1,56 +1,74 @@
 import tkinter as tk
-from ui.theme.tokens import CARD, TEXT, TEXT_MUTED
+from tkinter import ttk
+
+from ui.theme.tokens import SURFACE, BORDER
 
 
 class ProcessTable(tk.Frame):
-    def __init__(self, parent, processes):
-        super().__init__(parent, bg=CARD)
-        self.pack(fill="both", expand=True)
+    def __init__(self, parent):
+        super().__init__(
+            parent,
+            bg=SURFACE,
+            highlightthickness=1,
+            highlightbackground=BORDER
+        )
 
-        self.processes = processes
+        self.rows = []
+        self.tree = None
 
-        # define grid estrutura global
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=4)
-        self.columnconfigure(2, weight=2)
-        self.columnconfigure(3, weight=2)
-        self.columnconfigure(4, weight=2)
+    def render(self):
+        self.pack(fill="both", expand=True, padx=24, pady=(0, 24))
 
-        self._build_header()
-        self._build_rows()
+        container = tk.Frame(self, bg=SURFACE)
+        container.pack(fill="both", expand=True)
 
-    def _build_header(self):
-        headers = ["PID", "NAME", "CPU", "RAM", "STATUS"]
+        self.tree = ttk.Treeview(
+            container,
+            columns=("pid", "name", "cpu", "memory", "status"),
+            show="headings",
+            height=18
+        )
 
-        for col, text in enumerate(headers):
-            tk.Label(
-                self,
-                text=text,
-                bg=CARD,
-                fg=TEXT_MUTED,
-                font=("Segoe UI", 10, "bold"),
-                anchor="w"
-            ).grid(row=0, column=col, sticky="ew", padx=6, pady=(5, 10))
+        self.tree.heading("pid", text="PID")
+        self.tree.heading("name", text="Process")
+        self.tree.heading("cpu", text="CPU %")
+        self.tree.heading("memory", text="Memory %")
+        self.tree.heading("status", text="Status")
 
-    def _build_rows(self):
-        for i, p in enumerate(self.processes[:25], start=1):
+        self.tree.column("pid", width=70, anchor="center")
+        self.tree.column("name", width=280)
+        self.tree.column("cpu", width=80, anchor="center")
+        self.tree.column("memory", width=90, anchor="center")
+        self.tree.column("status", width=110, anchor="center")
 
-            tk.Label(self, text=str(p.pid),
-                     bg=CARD, fg=TEXT,
-                     anchor="w").grid(row=i, column=0, sticky="ew", padx=6)
+        scrollbar = ttk.Scrollbar(container, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
 
-            tk.Label(self, text=(p.name[:25] if p.name else "Unknown"),
-                     bg=CARD, fg=TEXT,
-                     anchor="w").grid(row=i, column=1, sticky="ew", padx=6)
+        self.tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
-            tk.Label(self, text=f"{p.cpu:.1f}%",
-                     bg=CARD, fg=TEXT,
-                     anchor="w").grid(row=i, column=2, sticky="ew", padx=6)
+    def update(self, processes):
+        if self.tree is None:
+            return
 
-            tk.Label(self, text=f"{p.memory:.1f}%",
-                     bg=CARD, fg=TEXT,
-                     anchor="w").grid(row=i, column=3, sticky="ew", padx=6)
+        processes = processes or []
 
-            tk.Label(self, text=p.status,
-                     bg=CARD, fg=TEXT_MUTED,
-                     anchor="w").grid(row=i, column=4, sticky="ew", padx=6)
+        while len(self.rows) < len(processes):
+            iid = self.tree.insert("", "end", values=("", "", "", "", ""))
+            self.rows.append(iid)
+
+        while len(self.rows) > len(processes):
+            iid = self.rows.pop()
+            self.tree.delete(iid)
+
+        for i, proc in enumerate(processes):
+            self.tree.item(
+                self.rows[i],
+                values=(
+                    proc.pid,
+                    proc.name,
+                    f"{proc.cpu:.1f}",
+                    f"{proc.memory:.1f}",
+                    proc.status
+                )
+            )
