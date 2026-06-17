@@ -6,7 +6,7 @@ from ui.components.metric_card import MetricCard
 from ui.components.chart_card import ChartCard
 from ui.components.scrollable_frame import ScrollableFrame
 
-import ui.theme.tokens as tokens
+from ui.theme import tokens
 
 
 class DashboardPage(BasePage):

@@ -1,11 +1,11 @@
 import tkinter as tk
 
-from ui.theme.tokens import BG, SURFACE, PRIMARY, TEXT_PRIMARY, TEXT_SECONDARY
+from ui.theme.tokens import BACKGROUND, SURFACE, PRIMARY, TEXT_PRIMARY, TEXT_SECONDARY
 
 
 class Sidebar(tk.Frame):
     def __init__(self, parent, navigate):
-        super().__init__(parent, bg=BG, width=240)
+        super().__init__(parent, bg=BACKGROUND, width=240)
         self.pack_propagate(False)
         self.navigate = navigate
         self.buttons = {}
@@ -13,7 +13,7 @@ class Sidebar(tk.Frame):
         tk.Label(
             self,
             text="USEREX",
-            bg=BG,
+            bg=BACKGROUND,
             fg=PRIMARY,
             font=("Segoe UI", 22, "bold")
         ).pack(anchor="w", padx=24, pady=(30, 0))
@@ -21,7 +21,7 @@ class Sidebar(tk.Frame):
         tk.Label(
             self,
             text="System Tracker",
-            bg=BG,
+            bg=BACKGROUND,
             fg=TEXT_SECONDARY,
             font=("Segoe UI", 10)
         ).pack(anchor="w", padx=24, pady=(0, 30))

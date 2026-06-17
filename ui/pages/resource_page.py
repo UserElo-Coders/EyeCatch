@@ -7,7 +7,7 @@ from ui.components.chart_card import ChartCard
 from ui.components.scrollable_frame import ScrollableFrame
 from ui.pages.resource_configs import ResourcePageConfig
 
-import ui.theme.tokens as tokens
+from ui.theme import tokens
 
 
 class ResourcePage(BasePage):

@@ -1,4 +1,43 @@
 from core.monitor import SystemMonitor
+from core.history import HistoryManager
+
+from unittest.mock import patch
+
+from core.monitor import SystemMonitor
+
+
+
+
+def test_network_info():
+    monitor = SystemMonitor()
+
+    network = monitor.get_network_info()
+
+    assert network.total_sent >= 0
+    assert network.total_received >= 0
+    assert network.sent_speed >= 0
+    assert network.received_speed >= 0
+
+def test_process_cache():
+    monitor = SystemMonitor()
+
+    first = monitor.get_processes()
+    second = monitor.get_processes()
+
+    assert isinstance(first, list)
+    assert isinstance(second, list)
+
+def test_invalid_history_key():
+    history = HistoryManager()
+
+    assert history.get("banana") == []
+
+def test_cpu_temperature():
+    monitor = SystemMonitor()
+
+    temp = monitor._get_temp()
+
+    assert isinstance(temp, str)
 
 
 def test_cpu_info():

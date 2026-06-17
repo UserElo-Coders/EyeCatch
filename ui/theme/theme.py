@@ -1,18 +1,18 @@
 import tkinter as tk
 from tkinter import ttk
 
-from ui.theme.tokens import BG, SURFACE, BORDER, PRIMARY, TEXT_PRIMARY, TEXT_SECONDARY
+from ui.theme.tokens import BACKGROUND, SURFACE, BORDER, PRIMARY, TEXT_PRIMARY, TEXT_SECONDARY
 
 
 def setup_theme(root: tk.Tk):
     style = ttk.Style(root)
     style.theme_use("clam")
 
-    root.configure(bg=BG)
+    root.configure(bg=BACKGROUND)
 
     style.configure(
         "TFrame",
-        background=BG
+        background=BACKGROUND
     )
 
     style.configure(
@@ -24,21 +24,21 @@ def setup_theme(root: tk.Tk):
 
     style.configure(
         "TLabel",
-        background=BG,
+        background=BACKGROUND,
         foreground=TEXT_PRIMARY,
         font=("Segoe UI", 10)
     )
 
     style.configure(
         "PageHeader.TLabel",
-        background=BG,
+        background=BACKGROUND,
         foreground=TEXT_PRIMARY,
         font=("Segoe UI", 24, "bold")
     )
 
     style.configure(
         "Subtle.TLabel",
-        background=BG,
+        background=BACKGROUND,
         foreground=TEXT_SECONDARY,
         font=("Segoe UI", 10)
     )
